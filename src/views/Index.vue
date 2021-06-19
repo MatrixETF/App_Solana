@@ -1,5 +1,9 @@
 <template>
   <div class="index">
+    <button v-if="wallet.connected" @click="getWalletTokenAccounts">
+      fetch wallet accounts!!!
+    </button>
+
     <div>
       program id: {{ ETF_PROGRAM_ID }}
       <hr />
@@ -52,8 +56,10 @@
         />
       </div>
 
-      <button v-if="wallet.connected">3. mint</button>
-      <button v-if="wallet.connected">4. redeem</button>
+      <button v-if="wallet.connected && initialized" @click="mintMdi">
+        3. mint
+      </button>
+      <button v-if="wallet.connected && initialized">4. redeem</button>
     </div>
   </div>
 </template>
@@ -63,10 +69,11 @@ import { Connection, clusterApiUrl, PublicKey } from "@solana/web3.js";
 import Big from "big.js";
 import BN from "bn.js";
 import { mapState } from "vuex";
-import { ETF_PROGRAM_ID } from "@/utils/id";
+import { ETF_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@/utils/id";
 import { ETF_POOLS } from "@/utils/pool";
 import { ETF_POOL_LAYOUT, MINT_LAYOUT, ACCOUNT_LAYOUT } from "@/utils/layout";
-import { getMultipleAccounts } from "@/utils/web3";
+import { getMultipleAccounts, findAssociatedTokenAddress } from "@/utils/web3";
+import { mint } from "@/utils/etf";
 
 export default {
   name: "Index",
@@ -90,6 +97,9 @@ export default {
       vaultsInfo: [],
 
       mdiAmount: 1,
+
+      initialized: false,
+      accounts: {},
     };
   },
 
@@ -137,6 +147,66 @@ export default {
 
       this.mdiInfo = mdiInfo;
       this.vaultsInfo = vaultsInfo;
+    },
+
+    async getWalletTokenAccounts() {
+      const accounts = {};
+
+      const { value } = await this.connection.getParsedTokenAccountsByOwner(
+        this.$wallet.publicKey,
+        {
+          programId: TOKEN_PROGRAM_ID,
+        }
+      );
+
+      value.forEach(({ pubkey, account }) => {
+        const { data } = account;
+        const { parsed } = data;
+        const { info } = parsed;
+
+        accounts[pubkey.toBase58()] = info;
+      });
+
+      this.accounts = { ...accounts };
+      this.initialized = true;
+    },
+
+    async mintMdi() {
+      const { etfBaseVaults, etfMdiMint, etfBaseMints } = this.poolInfo;
+
+      const mdiTokenAccount = await findAssociatedTokenAddress(
+        this.$wallet.publicKey,
+        etfMdiMint
+      );
+
+      const userTokenAccounts = [];
+
+      for (const mint of etfBaseMints) {
+        const tokenAccount = await findAssociatedTokenAddress(
+          this.$wallet.publicKey,
+          mint
+        );
+
+        if (this.accounts[tokenAccount.toBase58()]) {
+          userTokenAccounts.push(tokenAccount);
+        } else {
+          userTokenAccounts.push(null);
+        }
+      }
+
+      mint(
+        this.connection,
+        this.$wallet,
+        ETF_POOLS[0].id,
+        this.poolInfo,
+        this.accounts[mdiTokenAccount.toBase58()] ? mdiTokenAccount : null,
+        etfBaseVaults,
+        userTokenAccounts,
+        [new BN(1), new BN(1), new BN(1)],
+        new BN(1)
+      ).then((tx) => {
+        console.log(tx);
+      });
     },
   },
 };

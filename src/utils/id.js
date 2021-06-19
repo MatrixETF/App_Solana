@@ -1,7 +1,13 @@
 import { PublicKey } from "@solana/web3.js";
 
+export const SYSTEM_PROGRAM_ID = new PublicKey(
+  "11111111111111111111111111111111"
+);
 export const TOKEN_PROGRAM_ID = new PublicKey(
   "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+);
+export const RENT_PROGRAM_ID = new PublicKey(
+  "SysvarRent111111111111111111111111111111111"
 );
 export const CLOCK_PROGRAM_ID = new PublicKey(
   "SysvarC1ock11111111111111111111111111111111"

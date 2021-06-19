@@ -1,4 +1,92 @@
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, TransactionInstruction } from "@solana/web3.js";
+import {
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  SYSTEM_PROGRAM_ID,
+  RENT_PROGRAM_ID,
+} from "./id";
+
+export async function findProgramAddress(seeds, programId) {
+  const [publicKey, nonce] = await PublicKey.findProgramAddress(
+    seeds,
+    programId
+  );
+  return { publicKey, nonce };
+}
+
+export async function findAssociatedTokenAddress(
+  walletAddress,
+  tokenMintAddress
+) {
+  const { publicKey } = await findProgramAddress(
+    [
+      walletAddress.toBuffer(),
+      TOKEN_PROGRAM_ID.toBuffer(),
+      tokenMintAddress.toBuffer(),
+    ],
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+  return publicKey;
+}
+
+export async function createAssociatedTokenAccount(
+  tokenMintAddress,
+  owner,
+  transaction
+) {
+  const associatedTokenAddress = await findAssociatedTokenAddress(
+    owner,
+    tokenMintAddress
+  );
+
+  const keys = [
+    {
+      pubkey: owner,
+      isSigner: true,
+      isWritable: true,
+    },
+    {
+      pubkey: associatedTokenAddress,
+      isSigner: false,
+      isWritable: true,
+    },
+    {
+      pubkey: owner,
+      isSigner: false,
+      isWritable: false,
+    },
+    {
+      pubkey: tokenMintAddress,
+      isSigner: false,
+      isWritable: false,
+    },
+    {
+      pubkey: SYSTEM_PROGRAM_ID,
+      isSigner: false,
+      isWritable: false,
+    },
+    {
+      pubkey: TOKEN_PROGRAM_ID,
+      isSigner: false,
+      isWritable: false,
+    },
+    {
+      pubkey: RENT_PROGRAM_ID,
+      isSigner: false,
+      isWritable: false,
+    },
+  ];
+
+  transaction.add(
+    new TransactionInstruction({
+      keys,
+      programId: ASSOCIATED_TOKEN_PROGRAM_ID,
+      data: Buffer.from([]),
+    })
+  );
+
+  return associatedTokenAddress;
+}
 
 export async function getMultipleAccounts(
   connection,
@@ -81,4 +169,46 @@ export async function getMultipleAccounts(
       account,
     };
   });
+}
+
+export async function signTransaction(
+  connection,
+  wallet,
+  transaction,
+  signers = []
+) {
+  transaction.recentBlockhash = (
+    await connection.getRecentBlockhash()
+  ).blockhash;
+  transaction.setSigners(wallet.publicKey, ...signers.map((s) => s.publicKey));
+  if (signers.length > 0) {
+    transaction.partialSign(...signers);
+  }
+  return await wallet.signTransaction(transaction);
+}
+
+export async function sendSignedTransaction(connection, signedTransaction) {
+  const rawTransaction = signedTransaction.serialize();
+
+  const txid = await connection.sendRawTransaction(rawTransaction, {
+    skipPreflight: true,
+    preflightCommitment: connection.commitment,
+  });
+
+  return txid;
+}
+
+export async function sendTransaction(
+  connection,
+  wallet,
+  transaction,
+  signers = []
+) {
+  const signedTransaction = await signTransaction(
+    connection,
+    wallet,
+    transaction,
+    signers
+  );
+  return await sendSignedTransaction(connection, signedTransaction);
 }
