@@ -202,8 +202,13 @@ export default {
         this.accounts[mdiTokenAccount.toBase58()] ? mdiTokenAccount : null,
         etfBaseVaults,
         userTokenAccounts,
-        [new BN(1), new BN(1), new BN(1)],
-        new BN(1)
+        // TODO
+        [
+          new BN(0.005 * 10 ** 6),
+          new BN(0.03 * 10 ** 6),
+          new BN(0.2 * 10 ** 9),
+        ],
+        new BN(1 * 10 ** 6)
       ).then((tx) => {
         console.log(tx);
       });
