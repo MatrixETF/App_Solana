@@ -122,3 +122,106 @@ export async function mintInstruction(
     data,
   });
 }
+
+export async function redeem(
+  connection,
+  wallet,
+  etfPoolId,
+  etfInfo,
+  userMdiTokenAccount,
+  etfVaults,
+  userTokenAccounts,
+  mdiIn
+) {
+  const transaction = new Transaction();
+  const signers = [];
+
+  const owner = wallet.publicKey;
+
+  const { fluxAggregator, etfMdiMint } = etfInfo;
+
+  let newUserMdiTokenAccount;
+  if (!userMdiTokenAccount) {
+    newUserMdiTokenAccount = await createAssociatedTokenAccount(
+      etfMdiMint,
+      owner,
+      transaction
+    );
+  }
+
+  transaction.add(
+    await redeemInstruction(
+      new PublicKey(etfPoolId),
+      fluxAggregator,
+      etfMdiMint,
+      userMdiTokenAccount ?? newUserMdiTokenAccount,
+      owner,
+      etfVaults,
+      userTokenAccounts,
+      mdiIn
+    )
+  );
+
+  return await sendTransaction(connection, wallet, transaction, signers);
+}
+
+export async function redeemInstruction(
+  etfPoolId,
+  etfFluxAggregator,
+  etfMdiMint,
+  userMdiTokenAccount,
+  userOwner,
+  etfVaults,
+  userTokenAccounts,
+  mdiIn
+) {
+  if (etfVaults.length !== userTokenAccounts.length) {
+    throw new Error("etfVaults length not equals userTokenAccounts length");
+  }
+
+  const LAYOUT = struct([u8("instruction"), u64("mdiIn")]);
+
+  const { publicKey: authority } = await findProgramAddress(
+    [etfPoolId.toBuffer()],
+    ETF_PROGRAM_ID
+  );
+
+  const keys = [
+    { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+    { pubkey: CLOCK_PROGRAM_ID, isSigner: false, isWritable: true },
+    { pubkey: etfPoolId, isSigner: false, isWritable: true },
+    { pubkey: etfFluxAggregator, isSigner: false, isWritable: true },
+    { pubkey: authority, isSigner: false, isWritable: true },
+    { pubkey: etfMdiMint, isSigner: false, isWritable: true },
+    { pubkey: userMdiTokenAccount, isSigner: false, isWritable: true },
+    { pubkey: userOwner, isSigner: true, isWritable: true },
+  ];
+
+  etfVaults.forEach((vault, index) => {
+    keys.push({
+      pubkey: vault,
+      isSigner: false,
+      isWritable: true,
+    });
+    keys.push({
+      pubkey: userTokenAccounts[index],
+      isSigner: false,
+      isWritable: true,
+    });
+  });
+
+  const data = Buffer.alloc(LAYOUT.span);
+  LAYOUT.encode(
+    {
+      instruction: 2,
+      mdiIn,
+    },
+    data
+  );
+
+  return new TransactionInstruction({
+    keys,
+    programId: ETF_PROGRAM_ID,
+    data,
+  });
+}

@@ -59,7 +59,9 @@
       <button v-if="wallet.connected && initialized" @click="mintMdi">
         3. mint
       </button>
-      <button v-if="wallet.connected && initialized">4. redeem</button>
+      <button v-if="wallet.connected && initialized" @click="redeemMdi">
+        4. redeem
+      </button>
     </div>
   </div>
 </template>
@@ -73,7 +75,7 @@ import { ETF_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@/utils/id";
 import { ETF_POOLS } from "@/utils/pool";
 import { ETF_POOL_LAYOUT, MINT_LAYOUT, ACCOUNT_LAYOUT } from "@/utils/layout";
 import { getMultipleAccounts, findAssociatedTokenAddress } from "@/utils/web3";
-import { mint } from "@/utils/etf";
+import { mint, redeem } from "@/utils/etf";
 
 export default {
   name: "Index",
@@ -210,7 +212,45 @@ export default {
         ],
         new BN(1 * 10 ** 6)
       ).then((tx) => {
-        console.log(tx);
+        console.log(`https://explorer.solana.com/tx/${tx}?cluster=testnet`);
+      });
+    },
+
+    async redeemMdi() {
+      const { etfBaseVaults, etfMdiMint, etfBaseMints } = this.poolInfo;
+
+      const mdiTokenAccount = await findAssociatedTokenAddress(
+        this.$wallet.publicKey,
+        etfMdiMint
+      );
+
+      const userTokenAccounts = [];
+
+      for (const mint of etfBaseMints) {
+        const tokenAccount = await findAssociatedTokenAddress(
+          this.$wallet.publicKey,
+          mint
+        );
+
+        if (this.accounts[tokenAccount.toBase58()]) {
+          userTokenAccounts.push(tokenAccount);
+        } else {
+          userTokenAccounts.push(null);
+        }
+      }
+
+      redeem(
+        this.connection,
+        this.$wallet,
+        ETF_POOLS[0].id,
+        this.poolInfo,
+        this.accounts[mdiTokenAccount.toBase58()] ? mdiTokenAccount : null,
+        etfBaseVaults,
+        userTokenAccounts,
+        // TODO
+        new BN(1 * 10 ** 6)
+      ).then((tx) => {
+        console.log(`https://explorer.solana.com/tx/${tx}?cluster=testnet`);
       });
     },
   },
