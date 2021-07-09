@@ -2,19 +2,19 @@ export const TOKENS = {
   WSOL: {
     symbol: "WSOL",
     name: "Wrapped Solana",
-    mint: "8RyDQRkxSNkxSrrCSJVu3ictHZsQX7KikpcHFjdCTRZc",
+    mint: "D4Bp7jjoLvRj1C3SaDo1NJBb5ndQdnhfiPUGwr4rHjUP",
     decimals: 9,
   },
   BTC: {
     symbol: "BTC",
     name: "Wrapped Bitcoin",
-    mint: "Amp5SCa8MaC8bPAqbCbAwoT4RjXtX6baLoqBQQZQuVSv",
+    mint: "2HYofdGiwCXGxVWrUJZBwzMAe4rhizpnRh4oBzh9T6w2",
     decimals: 6,
   },
   ETH: {
     symbol: "ETH",
     name: "Wrapped Ethereum",
-    mint: "3FFTeEfJXaLauvywf5rc8Q3vmdnVrbRkMdKyxs1eVZ3M",
+    mint: "HZjdgTKseu2Tc42bpcMeUxp17d1WytkCVS3qFizwLk5c",
     decimals: 6,
   },
 };

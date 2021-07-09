@@ -2,7 +2,7 @@ import { TOKENS } from "./token";
 
 export const ETF_POOLS = [
   {
-    id: "Cv4fiquGqN9F5XTHX4Sy9AVBiJeTupyoyK2L2NyMNrSc",
+    id: "AK6ZqhBdNJ2wu7azo3fb5BWTQuZfPkb7VLXYZ9xr2TYn",
     coins: [{ ...TOKENS.BTC }, { ...TOKENS.ETH }, { ...TOKENS.WSOL }],
   },
 ];

@@ -91,7 +91,7 @@ export default {
       ETF_PROGRAM_ID,
       ETF_POOLS,
 
-      connection: new Connection(clusterApiUrl("testnet")),
+      connection: new Connection(clusterApiUrl("devnet")),
 
       poolInfo: null,
 
