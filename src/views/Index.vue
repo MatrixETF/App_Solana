@@ -204,15 +204,16 @@ export default {
         this.accounts[mdiTokenAccount.toBase58()] ? mdiTokenAccount : null,
         etfBaseVaults,
         userTokenAccounts,
-        // TODO
+        // TODO 0.01 is 1% slippage
         [
-          new BN(0.005 * 10 ** 6),
-          new BN(0.03 * 10 ** 6),
-          new BN(0.2 * 10 ** 9),
+          new BN(0.005 * 10 ** 6 * (1 + 0.01)),
+          new BN(0.015 * 10 ** 6 * (1 + 0.01)),
+          new BN(0.04 * 10 ** 9 * (1 + 0.01)),
         ],
         new BN(1 * 10 ** 6)
       ).then((tx) => {
-        console.log(`https://explorer.solana.com/tx/${tx}?cluster=testnet`);
+        // console.log(`https://explorer.solana.com/tx/${tx}?cluster=testnet`);
+        console.log(`https://solscan.io/tx/${tx}?cluster=devnet`);
       });
     },
 
