@@ -3,6 +3,9 @@
     <button v-if="wallet.connected" @click="getWalletTokenAccounts">
       fetch wallet accounts!!!
     </button>
+    <button v-if="wallet.connected" @click="subscribeWallet">
+      subscribe wallet change
+    </button>
 
     <div>
       program id: {{ ETF_PROGRAM_ID }}
@@ -173,6 +176,28 @@ export default {
       this.initialized = true;
     },
 
+    subscribeWallet() {
+      this.connection.onAccountChange(this.$wallet.publicKey, (info) => {
+        // TODO: refresh token accounts etc.
+        console.log("wallet changed");
+        console.log(info);
+      });
+    },
+
+    subscribeTxid(txid) {
+      this.connection.onSignature(txid, (info) => {
+        console.log("on tx");
+        console.log(info);
+
+        const { err } = info;
+        if (err) {
+          console.log(`${txid} failed`);
+        } else {
+          console.log(`${txid} successed`);
+        }
+      });
+    },
+
     async mintMdi() {
       const { etfBaseVaults, etfMdiMint, etfBaseMints } = this.poolInfo;
 
@@ -211,9 +236,11 @@ export default {
           new BN(0.04 * 10 ** 9 * (1 + 0.01)),
         ],
         new BN(1 * 10 ** 6)
-      ).then((tx) => {
-        // console.log(`https://explorer.solana.com/tx/${tx}?cluster=testnet`);
-        console.log(`https://solscan.io/tx/${tx}?cluster=devnet`);
+      ).then((txid) => {
+        console.log(`${txid} pending`);
+        this.subscribeTxid(txid);
+        // console.log(`https://explorer.solana.com/tx/${txid}?cluster=testnet`);
+        console.log(`https://solscan.io/tx/${txid}?cluster=devnet`);
       });
     },
 
